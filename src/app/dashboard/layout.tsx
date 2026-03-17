@@ -153,11 +153,11 @@ export default function DashboardLayout({
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium">{usageStats.planName}</span>
                 <a
-                  href="https://getlate.dev/dashboard"
+                  href="https://zernio.com/dashboard"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-muted-foreground hover:text-foreground"
-                  aria-label="Open Late dashboard"
+                  aria-label="Open Zernio dashboard"
                 >
                   <ExternalLink className="h-3 w-3" />
                 </a>
@@ -275,11 +275,11 @@ export default function DashboardLayout({
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild className="text-sm">
                   <a
-                    href="https://getlate.dev/dashboard"
+                    href="https://zernio.com/dashboard"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    Late Dashboard
+                    Zernio Dashboard
                     <ExternalLink className="ml-auto h-3 w-3" />
                   </a>
                 </DropdownMenuItem>

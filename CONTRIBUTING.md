@@ -12,7 +12,7 @@ Be respectful, inclusive, and constructive. We're all here to build something gr
 
 - Node.js 18+
 - npm 9+
-- A [Late API key](https://getlate.dev/dashboard/api-keys) for testing
+- A [Zernio API key](https://zernio.com/dashboard/api-keys) for testing
 
 ### Development Setup
 
@@ -33,7 +33,7 @@ Be respectful, inclusive, and constructive. We're all here to build something gr
    cp .env.example .env.local
    ```
 
-5. Add your Late API key to `.env.local`
+5. Add your Zernio API key to `.env.local`
 
 6. Start the development server:
    ```bash
@@ -101,7 +101,7 @@ src/
 │   ├── calendar/           # Calendar components
 │   └── shared/             # Reusable components
 ├── lib/
-│   └── late-api/           # Late API client and types
+│   └── late-api/           # Zernio API client and types
 └── stores/                 # Zustand state stores
 ```
 
@@ -112,12 +112,12 @@ src/
 - **shadcn/ui** - Headless UI components
 - **TanStack Query** - Server state management
 - **Zustand** - Client state management
-- **Late SDK** - `@getlatedev/node` for API calls
+- **Zernio SDK** - `@getlatedev/node` for API calls
 
 ### Adding New Features
 
 1. **UI Components**: Add to `src/components/`, use shadcn/ui primitives
-2. **API Integration**: Use the Late SDK via `src/lib/late-api/`
+2. **API Integration**: Use the Zernio SDK via `src/lib/late-api/`
 3. **State**: Use Zustand for client state, TanStack Query for server state
 4. **Routes**: Add to `src/app/` following Next.js App Router conventions
 
@@ -140,7 +140,7 @@ Include:
 
 ## Questions?
 
-- Open a [GitHub Discussion](https://github.com/getlate-dev/latewiz/discussions)
+- Open a [GitHub Discussion](https://github.com/zernio-dev/latewiz/discussions)
 - Join our [Discord](https://discord.gg/late)
 
 ## License

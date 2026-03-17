@@ -82,12 +82,12 @@ export default function LandingPage() {
     {
       question: "What is LateWiz?",
       answer:
-        "LateWiz is a free, open-source social media scheduling tool built on the Late API. It lets you schedule posts across 13 platforms from a single interface.",
+        "LateWiz is a free, open-source social media scheduling tool built on the Zernio API. It lets you schedule posts across 13 platforms from a single interface.",
     },
     {
       question: "Is LateWiz really free?",
       answer:
-        "Yes! LateWiz is MIT licensed and completely free. You just need a Late API key (free tier available) to connect your social accounts.",
+        "Yes! LateWiz is MIT licensed and completely free. You just need a Zernio API key (free tier available) to connect your social accounts.",
     },
     {
       question: "What platforms are supported?",
@@ -97,17 +97,17 @@ export default function LandingPage() {
     {
       question: "Can I self-host LateWiz?",
       answer:
-        "Absolutely. Clone the repo, add your Late API key, and deploy anywhere - Vercel, Netlify, your own server, etc.",
+        "Absolutely. Clone the repo, add your Zernio API key, and deploy anywhere - Vercel, Netlify, your own server, etc.",
     },
     {
-      question: "How do I get a Late API key?",
+      question: "How do I get a Zernio API key?",
       answer:
-        "Sign up at getlate.dev, create a project, and copy your API key. Free tier includes generous limits for personal use.",
+        "Sign up at zernio.com, create a project, and copy your API key. Free tier includes generous limits for personal use.",
     },
     {
       question: "Is my data secure?",
       answer:
-        "LateWiz doesn't store your social media credentials. All authentication is handled securely through the Late API using OAuth.",
+        "LateWiz doesn't store your social media credentials. All authentication is handled securely through the Zernio API using OAuth.",
     },
   ];
 
@@ -127,7 +127,7 @@ export default function LandingPage() {
 
           <div className="flex items-center gap-4">
             <a
-              href="https://getlate.dev/pricing"
+              href="https://zernio.com/pricing"
               target="_blank"
               rel="noopener noreferrer"
               className="hidden sm:inline-block text-sm font-medium text-muted-foreground hover:text-foreground transition-colors mr-2"
@@ -135,7 +135,7 @@ export default function LandingPage() {
               Pricing
             </a>
             <a
-              href="https://github.com/getlate-dev/latewiz"
+              href="https://github.com/zernio-dev/latewiz"
               target="_blank"
               rel="noopener noreferrer"
               className="text-muted-foreground hover:text-foreground transition-colors"
@@ -171,7 +171,7 @@ export default function LandingPage() {
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
             Schedule posts across 13 platforms with a single, beautiful interface.
-            Open source, free to use, and powered by Late.
+            Open source, free to use, and powered by Zernio.
           </p>
           <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Button size="lg" onClick={() => setShowApiKeyModal(true)}>
@@ -180,7 +180,7 @@ export default function LandingPage() {
             </Button>
             <Button size="lg" variant="outline" asChild>
               <a
-                href="https://github.com/getlate-dev/latewiz"
+                href="https://github.com/zernio-dev/latewiz"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -285,7 +285,7 @@ export default function LandingPage() {
             <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <div className="flex justify-center w-full sm:w-auto">
                 <iframe
-                  src="https://ghbtns.com/github-btn.html?user=getlate-dev&repo=latewiz&type=star&count=true&size=large"
+                  src="https://ghbtns.com/github-btn.html?user=zernio-dev&repo=latewiz&type=star&count=true&size=large"
                   style={{ border: 0 }}
                   scrolling="0"
                   width="150"
@@ -295,7 +295,7 @@ export default function LandingPage() {
               </div>
               <Button variant="outline" asChild>
                 <a
-                  href="https://docs.getlate.dev"
+                  href="https://docs.zernio.com"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -315,12 +315,12 @@ export default function LandingPage() {
             <p className="text-sm text-muted-foreground">
               Built with{" "}
               <a
-                href="https://getlate.dev"
+                href="https://zernio.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline underline-offset-4 hover:text-foreground"
               >
-                Late
+                Zernio
               </a>
               {" "}API
             </p>

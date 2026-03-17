@@ -70,7 +70,7 @@ export default function SettingsPage() {
             API Key
           </CardTitle>
           <CardDescription>
-            Your Late API key is used to connect to your Late account.
+            Your Zernio API key is used to connect to your Zernio account.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -98,7 +98,7 @@ export default function SettingsPage() {
                 <span className="font-medium">{usageStats.planName}</span>
                 <Button variant="link" size="sm" className="h-auto p-0" asChild>
                   <a
-                    href="https://getlate.dev/dashboard"
+                    href="https://zernio.com/dashboard"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -134,7 +134,7 @@ export default function SettingsPage() {
 
           <Button variant="outline" asChild>
             <a
-              href="https://getlate.dev/dashboard/api-keys"
+              href="https://zernio.com/dashboard/api-keys"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -253,17 +253,17 @@ export default function SettingsPage() {
             <p className="mt-1">
               Powered by{" "}
               <a
-                href="https://getlate.dev"
+                href="https://zernio.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline underline-offset-4 hover:text-foreground"
               >
-                Late
+                Zernio
               </a>
             </p>
             <p className="mt-2">
               <a
-                href="https://github.com/getlate-dev/latewiz"
+                href="https://github.com/zernio-dev/latewiz"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline underline-offset-4 hover:text-foreground"
@@ -272,7 +272,7 @@ export default function SettingsPage() {
               </a>
               {" · "}
               <a
-                href="https://github.com/getlate-dev/latewiz/issues"
+                href="https://github.com/zernio-dev/latewiz/issues"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline underline-offset-4 hover:text-foreground"

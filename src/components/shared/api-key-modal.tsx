@@ -78,10 +78,10 @@ export function ApiKeyModal({ open, onOpenChange }: ApiKeyModalProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Key className="h-5 w-5" />
-            Connect your Late API Key
+            Connect your Zernio API Key
           </DialogTitle>
           <DialogDescription>
-            Enter your Late API key to start scheduling posts across 13
+            Enter your Zernio API key to start scheduling posts across 13
             platforms.
           </DialogDescription>
         </DialogHeader>
@@ -122,7 +122,7 @@ export function ApiKeyModal({ open, onOpenChange }: ApiKeyModalProps) {
               asChild
             >
               <a
-                href="https://getlate.dev/dashboard/api-keys"
+                href="https://zernio.com/dashboard/api-keys"
                 target="_blank"
                 rel="noopener noreferrer"
               >

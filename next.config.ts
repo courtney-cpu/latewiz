@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "media.getlate.dev",
+        hostname: "media.zernio.com",
       },
       {
         protocol: "https",

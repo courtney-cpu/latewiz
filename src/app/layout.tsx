@@ -18,7 +18,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "LateWiz - Open Source Social Media Scheduling",
   description:
-    "Your social media scheduling wizard. Schedule posts across 13 platforms with a single tool, powered by Late.",
+    "Your social media scheduling wizard. Schedule posts across 13 platforms with a single tool, powered by Zernio.",
   keywords: [
     "social media scheduler",
     "open source",
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     "social media management",
     "content scheduling",
   ],
-  authors: [{ name: "Late", url: "https://getlate.dev" }],
+  authors: [{ name: "Zernio", url: "https://zernio.com" }],
   icons: {
     icon: [
       { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },

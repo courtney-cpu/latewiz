@@ -8,7 +8,7 @@ export function createLateClient(apiKey?: string): Late {
 
   if (!key) {
     throw new Error(
-      "Late API key is required. Set LATE_API_KEY environment variable or pass it explicitly."
+      "Zernio API key is required. Set LATE_API_KEY environment variable or pass it explicitly."
     );
   }
 
