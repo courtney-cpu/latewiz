@@ -1,5 +1,4 @@
 import { useMutation } from "@tanstack/react-query";
-import { useLate } from "./use-late";
 
 export interface UploadedMedia {
   url: string;
@@ -8,12 +7,7 @@ export interface UploadedMedia {
   contentType: string;
 }
 
-/**
- * Hook to get a presigned URL for media upload
- */
 export function useMediaPresign() {
-  const late = useLate();
-
   return useMutation({
     mutationFn: async ({
       filename,
@@ -22,25 +16,22 @@ export function useMediaPresign() {
       filename: string;
       contentType: string;
     }) => {
-      if (!late) throw new Error("Not authenticated");
-      const { data, error } = await late.media.getMediaPresignedUrl({
-        body: { filename, contentType },
+      const res = await fetch("/api/zernio/media/presign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename, contentType }),
       });
-      if (error) throw error;
-      return data;
+      if (!res.ok) throw new Error("Failed to get upload URL");
+      return res.json();
     },
   });
 }
 
-/**
- * Hook to upload media using presigned URL
- */
 export function useUploadMedia() {
   const presignMutation = useMediaPresign();
 
   return useMutation({
     mutationFn: async (file: File): Promise<UploadedMedia> => {
-      // Get presigned URL
       const presignData = await presignMutation.mutateAsync({
         filename: file.name,
         contentType: file.type,
@@ -50,27 +41,17 @@ export function useUploadMedia() {
         throw new Error("Failed to get upload URL");
       }
 
-      // Upload file to presigned URL
       const uploadResponse = await fetch(presignData.uploadUrl, {
         method: "PUT",
         body: file,
-        headers: {
-          "Content-Type": file.type,
-        },
+        headers: { "Content-Type": file.type },
       });
 
-      if (!uploadResponse.ok) {
-        throw new Error("Failed to upload file");
-      }
-
-      // Determine media type
-      const type: "image" | "video" = file.type.startsWith("video/")
-        ? "video"
-        : "image";
+      if (!uploadResponse.ok) throw new Error("Failed to upload file");
 
       return {
         url: presignData.publicUrl,
-        type,
+        type: file.type.startsWith("video/") ? "video" : "image",
         filename: file.name,
         contentType: file.type,
       };
@@ -78,32 +59,19 @@ export function useUploadMedia() {
   });
 }
 
-/**
- * Hook to upload multiple files
- */
 export function useUploadMultipleMedia() {
   const uploadMutation = useUploadMedia();
 
   return useMutation({
-    mutationFn: async (files: File[]): Promise<UploadedMedia[]> => {
-      const results = await Promise.all(
-        files.map((file) => uploadMutation.mutateAsync(file))
-      );
-      return results;
-    },
+    mutationFn: async (files: File[]): Promise<UploadedMedia[]> =>
+      Promise.all(files.map((file) => uploadMutation.mutateAsync(file))),
   });
 }
 
-/**
- * Utility to get file type from MIME type
- */
 export function getMediaType(mimeType: string): "image" | "video" {
   return mimeType.startsWith("video/") ? "video" : "image";
 }
 
-/**
- * Utility to validate file type
- */
 export function isValidMediaType(file: File): boolean {
   const validTypes = [
     "image/jpeg",
@@ -118,10 +86,6 @@ export function isValidMediaType(file: File): boolean {
   return validTypes.includes(file.type);
 }
 
-/**
- * Utility to get max file size by type (in bytes)
- */
 export function getMaxFileSize(type: "image" | "video"): number {
-  // 10MB for images, 5GB for videos
   return type === "video" ? 5 * 1024 * 1024 * 1024 : 10 * 1024 * 1024;
 }

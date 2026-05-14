@@ -1,5 +1,4 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useLate } from "./use-late";
 import { useCurrentProfileId } from "./use-profiles";
 import type { Platform, PlatformSpecificData } from "@/lib/late-api";
 
@@ -52,178 +51,119 @@ export interface UpdatePostInput {
   scheduledFor?: string;
 }
 
-/**
- * Hook to fetch posts with filters
- */
 export function usePosts(filters: PostFilters = {}) {
-  const late = useLate();
   const currentProfileId = useCurrentProfileId();
   const profileId = filters.profileId || currentProfileId;
 
   return useQuery({
     queryKey: postKeys.list({ ...filters, profileId }),
     queryFn: async () => {
-      if (!late) throw new Error("Not authenticated");
-      const { data, error } = await late.posts.listPosts({
-        query: {
-          profileId,
-          status: filters.status,
-          dateFrom: filters.dateFrom,
-          dateTo: filters.dateTo,
-          page: filters.page,
-          limit: filters.limit || 50,
-        },
-      });
-      if (error) throw error;
-      return data;
+      const params = new URLSearchParams();
+      if (profileId) params.set("profileId", profileId);
+      if (filters.status) params.set("status", filters.status);
+      if (filters.dateFrom) params.set("dateFrom", filters.dateFrom);
+      if (filters.dateTo) params.set("dateTo", filters.dateTo);
+      if (filters.page) params.set("page", String(filters.page));
+      params.set("limit", String(filters.limit ?? 50));
+      const res = await fetch(`/api/zernio/posts?${params}`);
+      if (!res.ok) throw new Error("Failed to fetch posts");
+      return res.json();
     },
-    enabled: !!late && !!profileId,
+    enabled: !!profileId,
   });
 }
 
-/**
- * Hook to fetch a single post
- */
 export function usePost(postId: string) {
-  const late = useLate();
-
   return useQuery({
     queryKey: postKeys.detail(postId),
     queryFn: async () => {
-      if (!late) throw new Error("Not authenticated");
-      const { data, error } = await late.posts.getPost({
-        path: { postId },
-      });
-      if (error) throw error;
-      return data;
+      const res = await fetch(`/api/zernio/posts/${postId}`);
+      if (!res.ok) throw new Error("Failed to fetch post");
+      return res.json();
     },
-    enabled: !!late && !!postId,
+    enabled: !!postId,
   });
 }
 
-/**
- * Hook to create a post
- */
 export function useCreatePost() {
-  const late = useLate();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (input: CreatePostInput) => {
-      if (!late) throw new Error("Not authenticated");
-      const { data, error } = await late.posts.createPost({
-        body: input,
+      const res = await fetch("/api/zernio/posts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
       });
-      if (error) throw error;
-      return data;
+      if (!res.ok) throw new Error("Failed to create post");
+      return res.json();
     },
     onSuccess: () => {
-      // Invalidate all list queries but not details (they aren't affected)
       queryClient.invalidateQueries({ queryKey: postKeys.lists() });
     },
   });
 }
 
-/**
- * Hook to update a post
- */
 export function useUpdatePost() {
-  const late = useLate();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ postId, ...input }: UpdatePostInput) => {
-      if (!late) throw new Error("Not authenticated");
-      const { data, error } = await late.posts.updatePost({
-        path: { postId },
-        body: input,
+      const res = await fetch(`/api/zernio/posts/${postId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
       });
-      if (error) throw error;
-      return data;
+      if (!res.ok) throw new Error("Failed to update post");
+      return res.json();
     },
     onSuccess: (_, { postId }) => {
-      // Invalidate the specific post detail and all lists (post may appear in multiple list views)
       queryClient.invalidateQueries({ queryKey: postKeys.detail(postId) });
       queryClient.invalidateQueries({ queryKey: postKeys.lists() });
     },
   });
 }
 
-/**
- * Hook to delete a post
- */
 export function useDeletePost() {
-  const late = useLate();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (postId: string) => {
-      if (!late) throw new Error("Not authenticated");
-      const { error } = await late.posts.deletePost({
-        path: { postId },
-      });
-      if (error) throw error;
+      const res = await fetch(`/api/zernio/posts/${postId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete post");
       return postId;
     },
     onSuccess: (postId) => {
-      // Remove the deleted post from cache and invalidate lists
       queryClient.removeQueries({ queryKey: postKeys.detail(postId) });
       queryClient.invalidateQueries({ queryKey: postKeys.lists() });
     },
   });
 }
 
-/**
- * Hook to retry a failed post
- */
 export function useRetryPost() {
-  const late = useLate();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (postId: string) => {
-      if (!late) throw new Error("Not authenticated");
-      const { data, error } = await late.posts.retryPost({
-        path: { postId },
-      });
-      if (error) throw error;
-      return data;
+      const res = await fetch(`/api/zernio/posts/${postId}/retry`, { method: "POST" });
+      if (!res.ok) throw new Error("Failed to retry post");
+      return res.json();
     },
     onSuccess: (_, postId) => {
-      // Invalidate the specific post and all lists (status changes)
       queryClient.invalidateQueries({ queryKey: postKeys.detail(postId) });
       queryClient.invalidateQueries({ queryKey: postKeys.lists() });
     },
   });
 }
 
-/**
- * Hook to fetch posts for calendar view (by date range)
- */
 export function useCalendarPosts(dateFrom: string, dateTo: string) {
-  return usePosts({
-    dateFrom,
-    dateTo,
-    limit: 500, // Get more posts for calendar view
-  });
+  return usePosts({ dateFrom, dateTo, limit: 500 });
 }
 
-/**
- * Hook to fetch scheduled posts
- */
 export function useScheduledPosts(limit = 10) {
-  return usePosts({
-    status: "scheduled",
-    limit,
-  });
+  return usePosts({ status: "scheduled", limit });
 }
 
-/**
- * Hook to fetch recent posts (published)
- */
 export function useRecentPosts(limit = 10) {
-  return usePosts({
-    status: "published",
-    limit,
-  });
+  return usePosts({ status: "published", limit });
 }

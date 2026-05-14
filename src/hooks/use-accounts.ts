@@ -1,5 +1,4 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useLate } from "./use-late";
 import { useCurrentProfileId } from "./use-profiles";
 import type { Platform } from "@/lib/late-api";
 
@@ -28,98 +27,47 @@ export interface AccountHealth {
   error?: string;
 }
 
-/**
- * Hook to fetch all accounts for the current profile
- */
 export function useAccounts(profileId?: string) {
-  const late = useLate();
   const currentProfileId = useCurrentProfileId();
   const targetProfileId = profileId || currentProfileId;
 
   return useQuery({
     queryKey: accountKeys.list(targetProfileId || ""),
     queryFn: async () => {
-      if (!late) throw new Error("Not authenticated");
-      const { data, error } = await late.accounts.listAccounts({
-        query: { profileId: targetProfileId },
-      });
-      if (error) throw error;
-      return data;
+      const params = new URLSearchParams();
+      if (targetProfileId) params.set("profileId", targetProfileId);
+      const res = await fetch(`/api/zernio/accounts?${params}`);
+      if (!res.ok) throw new Error("Failed to fetch accounts");
+      return res.json();
     },
-    enabled: !!late && !!targetProfileId,
+    enabled: !!targetProfileId,
   });
 }
 
-/**
- * Hook to fetch account health status
- */
 export function useAccountsHealth(profileId?: string) {
-  const late = useLate();
   const currentProfileId = useCurrentProfileId();
   const targetProfileId = profileId || currentProfileId;
 
   return useQuery({
     queryKey: accountKeys.health(targetProfileId || ""),
     queryFn: async () => {
-      if (!late) throw new Error("Not authenticated");
-      const { data, error } = await late.accounts.getAllAccountsHealth({
-        query: { profileId: targetProfileId },
-      });
-      if (error) throw error;
-      return data;
+      const params = new URLSearchParams();
+      if (targetProfileId) params.set("profileId", targetProfileId);
+      const res = await fetch(`/api/zernio/accounts/health?${params}`);
+      if (!res.ok) throw new Error("Failed to fetch account health");
+      return res.json();
     },
-    enabled: !!late && !!targetProfileId,
+    enabled: !!targetProfileId,
   });
 }
 
-/**
- * Hook to start OAuth connection flow
- */
-export function useConnectAccount() {
-  const late = useLate();
-  const currentProfileId = useCurrentProfileId();
-
-  return useMutation({
-    mutationFn: async ({
-      platform,
-      profileId,
-    }: {
-      platform: Platform;
-      profileId?: string;
-    }) => {
-      if (!late) throw new Error("Not authenticated");
-      const targetProfileId = profileId || currentProfileId;
-      if (!targetProfileId) throw new Error("No profile selected");
-
-      const redirectUrl = `${window.location.origin}/callback`;
-      const { data, error } = await late.connect.getConnectUrl({
-        path: { platform },
-        query: {
-          profileId: targetProfileId,
-          redirect_url: redirectUrl,
-          headless: true,
-        },
-      });
-      if (error) throw error;
-      return data;
-    },
-  });
-}
-
-/**
- * Hook to delete/disconnect an account
- */
 export function useDeleteAccount() {
-  const late = useLate();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (accountId: string) => {
-      if (!late) throw new Error("Not authenticated");
-      const { error } = await late.accounts.deleteAccount({
-        path: { accountId },
-      });
-      if (error) throw error;
+      const res = await fetch(`/api/zernio/accounts/${accountId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to disconnect account");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: accountKeys.all });
@@ -127,9 +75,6 @@ export function useDeleteAccount() {
   });
 }
 
-/**
- * Hook to get accounts grouped by platform
- */
 export function useAccountsByPlatform(profileId?: string) {
   const { data, ...rest } = useAccounts(profileId);
 

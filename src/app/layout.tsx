@@ -16,20 +16,8 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "LateWiz - Open Source Social Media Scheduling",
-  description:
-    "Your social media scheduling wizard. Schedule posts across 13 platforms with a single tool, powered by Zernio.",
-  keywords: [
-    "social media scheduler",
-    "open source",
-    "instagram scheduler",
-    "tiktok scheduler",
-    "twitter scheduler",
-    "linkedin scheduler",
-    "social media management",
-    "content scheduling",
-  ],
-  authors: [{ name: "Zernio", url: "https://zernio.com" }],
+  title: "Just An Agent — Client Portal",
+  description: "Your social media scheduling portal, powered by Just An Agent.",
   icons: {
     icon: [
       { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
@@ -38,30 +26,6 @@ export const metadata: Metadata = {
     apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
   },
   manifest: "/site.webmanifest",
-  openGraph: {
-    title: "LateWiz - Open Source Social Media Scheduling",
-    description:
-      "Your social media scheduling wizard. Schedule posts across 13 platforms with a single tool.",
-    url: "https://latewiz.com",
-    siteName: "LateWiz",
-    type: "website",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "LateWiz - Open Source Social Media Scheduling",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "LateWiz - Open Source Social Media Scheduling",
-    description:
-      "Your social media scheduling wizard. Schedule posts across 13 platforms with a single tool.",
-    images: ["/og-image.png"],
-  },
-  metadataBase: new URL("https://latewiz.com"),
 };
 
 export default function RootLayout({

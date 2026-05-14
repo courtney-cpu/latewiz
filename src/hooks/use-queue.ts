@@ -1,5 +1,4 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useLate } from "./use-late";
 import { useCurrentProfileId } from "./use-profiles";
 
 export const queueKeys = {
@@ -11,13 +10,11 @@ export const queueKeys = {
   nextSlot: (profileId: string) => ["queue", "nextSlot", profileId] as const,
 };
 
-// SDK-aligned types
-// Note: API may return either `time` string or `hour`/`minute` numbers depending on how slot was created
 export interface QueueSlot {
-  dayOfWeek: number; // 0-6, Sunday = 0
-  time?: string; // "HH:mm" format (preferred)
-  hour?: number; // Legacy: 0-23
-  minute?: number; // Legacy: 0-59
+  dayOfWeek: number;
+  time?: string;
+  hour?: number;
+  minute?: number;
 }
 
 export interface QueueSchedule {
@@ -30,10 +27,9 @@ export interface QueueSchedule {
   isDefault?: boolean;
   createdAt?: string;
   updatedAt?: string;
-  nextSlots?: string[]; // Computed upcoming slot times as ISO strings
+  nextSlots?: string[];
 }
 
-// Helper functions for time conversion
 export function formatTime(hour: number, minute: number): string {
   return `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
 }
@@ -43,129 +39,105 @@ export function parseTime(time: string): { hour: number; minute: number } {
   return { hour: hour || 0, minute: minute || 0 };
 }
 
-/**
- * Get the time string from a slot, handling both formats.
- * API may return either `time` string or `hour`/`minute` numbers.
- */
 export function getSlotTime(slot: QueueSlot): string {
-  if (slot.time) {
-    return slot.time;
-  }
+  if (slot.time) return slot.time;
   if (typeof slot.hour === "number" && typeof slot.minute === "number") {
     return formatTime(slot.hour, slot.minute);
   }
-  return "00:00"; // fallback
+  return "00:00";
 }
 
-/**
- * Normalize a slot to always have the `time` field.
- */
 export function normalizeSlot(slot: QueueSlot): QueueSlot {
-  return {
-    dayOfWeek: slot.dayOfWeek,
-    time: getSlotTime(slot),
-  };
+  return { dayOfWeek: slot.dayOfWeek, time: getSlotTime(slot) };
 }
 
-/**
- * Hook to fetch all queues for a profile
- */
 export function useQueues(profileId?: string) {
-  const late = useLate();
   const currentProfileId = useCurrentProfileId();
   const targetProfileId = profileId || currentProfileId;
 
   return useQuery({
     queryKey: queueKeys.queues(targetProfileId || ""),
     queryFn: async () => {
-      if (!late) throw new Error("Not authenticated");
-      const { data, error } = await late.queue.listQueueSlots({
-        query: { profileId: targetProfileId!, all: "true" },
-      });
-      if (error) throw error;
-      return data as { queues?: QueueSchedule[]; count?: number };
+      const params = new URLSearchParams();
+      if (targetProfileId) params.set("profileId", targetProfileId);
+      params.set("all", "true");
+      const res = await fetch(`/api/zernio/queue?${params}`);
+      if (!res.ok) throw new Error("Failed to fetch queues");
+      return res.json() as Promise<{ queues?: QueueSchedule[]; count?: number }>;
     },
-    enabled: !!late && !!targetProfileId,
+    enabled: !!targetProfileId,
   });
 }
 
-/**
- * Hook to fetch queue slots (single queue / default)
- */
 export function useQueueSlots(profileId?: string, queueId?: string) {
-  const late = useLate();
   const currentProfileId = useCurrentProfileId();
   const targetProfileId = profileId || currentProfileId;
 
   return useQuery({
     queryKey: queueKeys.slots(targetProfileId || ""),
     queryFn: async () => {
-      if (!late) throw new Error("Not authenticated");
-      const { data, error } = await late.queue.listQueueSlots({
-        query: { profileId: targetProfileId!, queueId },
-      });
-      if (error) throw error;
-      return data as { exists?: boolean; schedule?: QueueSchedule; nextSlots?: string[] };
+      const params = new URLSearchParams();
+      if (targetProfileId) params.set("profileId", targetProfileId);
+      if (queueId) params.set("queueId", queueId);
+      const res = await fetch(`/api/zernio/queue?${params}`);
+      if (!res.ok) throw new Error("Failed to fetch queue slots");
+      return res.json() as Promise<{
+        exists?: boolean;
+        schedule?: QueueSchedule;
+        nextSlots?: string[];
+      }>;
     },
-    enabled: !!late && !!targetProfileId,
+    enabled: !!targetProfileId,
   });
 }
 
-/**
- * Hook to preview upcoming queue times
- */
 export function useQueuePreview(count = 10, profileId?: string) {
-  const late = useLate();
   const currentProfileId = useCurrentProfileId();
   const targetProfileId = profileId || currentProfileId;
 
   return useQuery({
     queryKey: queueKeys.preview(targetProfileId || "", count),
     queryFn: async () => {
-      if (!late) throw new Error("Not authenticated");
-      const { data, error } = await late.queue.previewQueue({
-        query: { profileId: targetProfileId!, count },
-      });
-      if (error) throw error;
-      return data as { profileId?: string; count?: number; slots?: string[] };
+      const params = new URLSearchParams();
+      if (targetProfileId) params.set("profileId", targetProfileId);
+      params.set("count", String(count));
+      const res = await fetch(`/api/zernio/queue/preview?${params}`);
+      if (!res.ok) throw new Error("Failed to preview queue");
+      return res.json() as Promise<{
+        profileId?: string;
+        count?: number;
+        slots?: string[];
+      }>;
     },
-    enabled: !!late && !!targetProfileId,
+    enabled: !!targetProfileId,
   });
 }
 
-/**
- * Hook to get the next available queue slot
- */
 export function useNextQueueSlot(profileId?: string, queueId?: string) {
-  const late = useLate();
   const currentProfileId = useCurrentProfileId();
   const targetProfileId = profileId || currentProfileId;
 
   return useQuery({
     queryKey: queueKeys.nextSlot(targetProfileId || ""),
     queryFn: async () => {
-      if (!late) throw new Error("Not authenticated");
-      const { data, error } = await late.queue.getNextQueueSlot({
-        query: { profileId: targetProfileId!, queueId },
-      });
-      if (error) throw error;
-      return data as {
+      const params = new URLSearchParams();
+      if (targetProfileId) params.set("profileId", targetProfileId);
+      if (queueId) params.set("queueId", queueId);
+      const res = await fetch(`/api/zernio/queue/next?${params}`);
+      if (!res.ok) throw new Error("Failed to get next queue slot");
+      return res.json() as Promise<{
         profileId?: string;
         nextSlot?: string;
         timezone?: string;
         queueId?: string;
         queueName?: string;
-      };
+      }>;
     },
-    enabled: !!late && !!targetProfileId,
+    enabled: !!targetProfileId,
   });
 }
 
-/**
- * Hook to create a new queue
- */
 export function useCreateQueue() {
-  const late = useLate();
   const queryClient = useQueryClient();
   const currentProfileId = useCurrentProfileId();
 
@@ -183,21 +155,15 @@ export function useCreateQueue() {
       active?: boolean;
       profileId?: string;
     }) => {
-      if (!late) throw new Error("Not authenticated");
       const targetProfileId = profileId || currentProfileId;
       if (!targetProfileId) throw new Error("No profile selected");
-
-      const { data, error } = await late.queue.createQueueSlot({
-        body: {
-          profileId: targetProfileId,
-          name,
-          timezone,
-          slots,
-          active,
-        },
+      const res = await fetch("/api/zernio/queue", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ profileId: targetProfileId, name, timezone, slots, active }),
       });
-      if (error) throw error;
-      return data;
+      if (!res.ok) throw new Error("Failed to create queue");
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queueKeys.all });
@@ -205,11 +171,7 @@ export function useCreateQueue() {
   });
 }
 
-/**
- * Hook to update queue slots
- */
 export function useUpdateQueueSlots() {
-  const late = useLate();
   const queryClient = useQueryClient();
   const currentProfileId = useCurrentProfileId();
 
@@ -233,12 +195,12 @@ export function useUpdateQueueSlots() {
       setAsDefault?: boolean;
       reshuffleExisting?: boolean;
     }) => {
-      if (!late) throw new Error("Not authenticated");
       const targetProfileId = profileId || currentProfileId;
       if (!targetProfileId) throw new Error("No profile selected");
-
-      const { data, error } = await late.queue.updateQueueSlot({
-        body: {
+      const res = await fetch("/api/zernio/queue", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           profileId: targetProfileId,
           queueId,
           name,
@@ -247,10 +209,10 @@ export function useUpdateQueueSlots() {
           active,
           setAsDefault,
           reshuffleExisting,
-        },
+        }),
       });
-      if (error) throw error;
-      return data;
+      if (!res.ok) throw new Error("Failed to update queue slots");
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queueKeys.all });
@@ -258,11 +220,7 @@ export function useUpdateQueueSlots() {
   });
 }
 
-/**
- * Hook to update a queue (name, active status, etc.)
- */
 export function useUpdateQueue() {
-  const late = useLate();
   const queryClient = useQueryClient();
   const currentProfileId = useCurrentProfileId();
 
@@ -284,29 +242,35 @@ export function useUpdateQueue() {
       setAsDefault?: boolean;
       profileId?: string;
     }) => {
-      if (!late) throw new Error("Not authenticated");
       const targetProfileId = profileId || currentProfileId;
       if (!targetProfileId) throw new Error("No profile selected");
 
-      // We need to get the current queue to preserve existing values
-      const { data: current } = await late.queue.listQueueSlots({
-        query: { profileId: targetProfileId, queueId },
-      });
+      // Fetch current queue to preserve existing values
+      const params = new URLSearchParams();
+      params.set("profileId", targetProfileId);
+      params.set("queueId", queueId);
+      const getRes = await fetch(`/api/zernio/queue?${params}`);
+      const current = await getRes.json();
       const currentSchedule = (current as { schedule?: QueueSchedule })?.schedule;
 
-      const { data, error } = await late.queue.updateQueueSlot({
-        body: {
+      const res = await fetch("/api/zernio/queue", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           profileId: targetProfileId,
           queueId,
           name: name ?? currentSchedule?.name,
-          timezone: timezone ?? currentSchedule?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
+          timezone:
+            timezone ??
+            currentSchedule?.timezone ??
+            Intl.DateTimeFormat().resolvedOptions().timeZone,
           slots: slots ?? currentSchedule?.slots ?? [],
           active,
           setAsDefault,
-        },
+        }),
       });
-      if (error) throw error;
-      return data;
+      if (!res.ok) throw new Error("Failed to update queue");
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queueKeys.all });
@@ -314,31 +278,20 @@ export function useUpdateQueue() {
   });
 }
 
-/**
- * Hook to delete a queue
- */
 export function useDeleteQueue() {
-  const late = useLate();
   const queryClient = useQueryClient();
   const currentProfileId = useCurrentProfileId();
 
   return useMutation({
-    mutationFn: async ({
-      queueId,
-      profileId,
-    }: {
-      queueId: string;
-      profileId?: string;
-    }) => {
-      if (!late) throw new Error("Not authenticated");
+    mutationFn: async ({ queueId, profileId }: { queueId: string; profileId?: string }) => {
       const targetProfileId = profileId || currentProfileId;
       if (!targetProfileId) throw new Error("No profile selected");
-
-      const { data, error } = await late.queue.deleteQueueSlot({
-        query: { profileId: targetProfileId, queueId },
-      });
-      if (error) throw error;
-      return data;
+      const params = new URLSearchParams();
+      params.set("profileId", targetProfileId);
+      params.set("queueId", queueId);
+      const res = await fetch(`/api/zernio/queue?${params}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete queue");
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queueKeys.all });
@@ -346,12 +299,8 @@ export function useDeleteQueue() {
   });
 }
 
-/**
- * Hook to toggle queue active status
- */
 export function useToggleQueueActive() {
   const updateQueue = useUpdateQueue();
-
   return useMutation({
     mutationFn: async ({
       queueId,
@@ -361,34 +310,18 @@ export function useToggleQueueActive() {
       queueId: string;
       active: boolean;
       profileId?: string;
-    }) => {
-      return updateQueue.mutateAsync({ queueId, active, profileId });
-    },
+    }) => updateQueue.mutateAsync({ queueId, active, profileId }),
   });
 }
 
-/**
- * Hook to set a queue as default
- */
 export function useSetDefaultQueue() {
   const updateQueue = useUpdateQueue();
-
   return useMutation({
-    mutationFn: async ({
-      queueId,
-      profileId,
-    }: {
-      queueId: string;
-      profileId?: string;
-    }) => {
-      return updateQueue.mutateAsync({ queueId, setAsDefault: true, profileId });
-    },
+    mutationFn: async ({ queueId, profileId }: { queueId: string; profileId?: string }) =>
+      updateQueue.mutateAsync({ queueId, setAsDefault: true, profileId }),
   });
 }
 
-/**
- * Days of the week for display
- */
 export const DAYS_OF_WEEK = [
   "Sunday",
   "Monday",
@@ -399,25 +332,13 @@ export const DAYS_OF_WEEK = [
   "Saturday",
 ] as const;
 
-export const DAYS_OF_WEEK_SHORT = [
-  "Sun",
-  "Mon",
-  "Tue",
-  "Wed",
-  "Thu",
-  "Fri",
-  "Sat",
-] as const;
+export const DAYS_OF_WEEK_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 
-/**
- * Format a queue slot for display
- */
 export function formatQueueSlot(slot: QueueSlot): string {
   const day = DAYS_OF_WEEK[slot.dayOfWeek];
   return `${day} at ${slot.time}`;
 }
 
-// Re-export timezone utilities from lib for convenience
 export {
   COMMON_TIMEZONES,
   getUserTimezone,

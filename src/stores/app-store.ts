@@ -2,18 +2,16 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 interface AppState {
-  // User preferences
   timezone: string;
   defaultProfileId: string | null;
-
-  // UI state
   sidebarOpen: boolean;
+  hasHydrated: boolean;
 
-  // Actions
   setTimezone: (timezone: string) => void;
   setDefaultProfileId: (profileId: string | null) => void;
   setSidebarOpen: (open: boolean) => void;
   toggleSidebar: () => void;
+  setHasHydrated: (hydrated: boolean) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -22,18 +20,23 @@ export const useAppStore = create<AppState>()(
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       defaultProfileId: null,
       sidebarOpen: true,
+      hasHydrated: false,
 
       setTimezone: (timezone) => set({ timezone }),
       setDefaultProfileId: (profileId) => set({ defaultProfileId: profileId }),
       setSidebarOpen: (open) => set({ sidebarOpen: open }),
       toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
+      setHasHydrated: (hydrated) => set({ hasHydrated: hydrated }),
     }),
     {
-      name: "latewiz-app",
+      name: "jaa-app",
       partialize: (state) => ({
         timezone: state.timezone,
         defaultProfileId: state.defaultProfileId,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (state) state.setHasHydrated(true);
+      },
     }
   )
 );
