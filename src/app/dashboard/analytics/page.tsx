@@ -6,7 +6,6 @@ import { useAccounts } from "@/hooks";
 import { PlatformIcon } from "@/components/shared/platform-icon";
 import { PLATFORM_NAMES, type Platform } from "@/lib/late-api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -15,7 +14,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { BarChart2, TrendingUp, Heart, MessageCircle, Share2, Eye, Users } from "lucide-react";
+import {
+  BarChart2,
+  TrendingUp,
+  Heart,
+  MessageCircle,
+  Share2,
+  Eye,
+  Users,
+  MousePointerClick,
+  Play,
+  FileText,
+  Trophy,
+} from "lucide-react";
 import { format, subDays } from "date-fns";
 
 type DateRange = "7d" | "30d" | "90d";
@@ -27,11 +38,15 @@ const DATE_RANGES: Record<DateRange, { label: string; days: number }> = {
   "90d": { label: "Last 90 days", days: 90 },
 };
 
-function formatNum(n?: number) {
+function formatNum(n?: number | null) {
   if (n == null) return "—";
   if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
   if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
   return n.toLocaleString();
+}
+
+function engagementScore(a: any) {
+  return (a.likes || 0) + (a.comments || 0) + (a.shares || 0) + (a.clicks || 0);
 }
 
 export default function AnalyticsPage() {
@@ -46,7 +61,7 @@ export default function AnalyticsPage() {
     fromDate,
     toDate,
     sortBy,
-    order: sortBy === "engagement" ? "desc" : "desc",
+    order: "desc",
     limit: 100,
   });
 
@@ -74,17 +89,17 @@ export default function AnalyticsPage() {
     [followerAccounts]
   );
 
+  const allPosts = (data as any)?.posts || [];
+  const overview = (data as any)?.overview || {};
+
   const posts = useMemo(() => {
-    const list = (data as any)?.posts || [];
-    if (platformFilter === "all") return list;
-    return list.filter((p: any) =>
+    if (platformFilter === "all") return allPosts;
+    return allPosts.filter((p: any) =>
       p.platforms?.some((pl: any) => pl.platform === platformFilter) ||
       p.platform === platformFilter
     );
-  }, [data, platformFilter]);
+  }, [allPosts, platformFilter]);
 
-  // Aggregate summary from all posts (not filtered by platform for overview)
-  const allPosts = (data as any)?.posts || [];
   const summary = useMemo(() => {
     return allPosts.reduce(
       (acc: any, post: any) => {
@@ -95,13 +110,21 @@ export default function AnalyticsPage() {
           shares: acc.shares + (a.shares || 0),
           impressions: acc.impressions + (a.impressions || 0),
           reach: acc.reach + (a.reach || 0),
+          clicks: acc.clicks + (a.clicks || 0),
+          views: acc.views + (a.views || 0),
         };
       },
-      { likes: 0, comments: 0, shares: 0, impressions: 0, reach: 0 }
+      { likes: 0, comments: 0, shares: 0, impressions: 0, reach: 0, clicks: 0, views: 0 }
     );
   }, [allPosts]);
 
-  // Unique platforms in this period
+  const topPost = useMemo(() => {
+    if (!allPosts.length) return null;
+    return [...allPosts].sort(
+      (a, b) => engagementScore(b.analytics || {}) - engagementScore(a.analytics || {})
+    )[0];
+  }, [allPosts]);
+
   const platforms = useMemo(() => {
     const set = new Set<string>();
     allPosts.forEach((p: any) => {
@@ -110,6 +133,8 @@ export default function AnalyticsPage() {
     });
     return Array.from(set);
   }, [allPosts]);
+
+  const publishedCount = overview.publishedPosts ?? allPosts.length;
 
   return (
     <div className="space-y-6">
@@ -134,13 +159,14 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
         {[
+          { label: "Posts", value: publishedCount, icon: FileText, loading: isLoading, growth: null },
           { label: "Likes", value: summary.likes, icon: Heart, loading: isLoading, growth: null },
           { label: "Comments", value: summary.comments, icon: MessageCircle, loading: isLoading, growth: null },
           { label: "Shares", value: summary.shares, icon: Share2, loading: isLoading, growth: null },
-          { label: "Impressions", value: summary.impressions, icon: Eye, loading: isLoading, growth: null },
-          { label: "Reach", value: summary.reach, icon: TrendingUp, loading: isLoading, growth: null },
+          { label: "Clicks", value: summary.clicks, icon: MousePointerClick, loading: isLoading, growth: null },
+          { label: "Views", value: summary.views, icon: Play, loading: isLoading, growth: null },
           { label: "Followers", value: totalFollowers, icon: Users, loading: followerLoading, growth: totalGrowth },
         ].map(({ label, value, icon: Icon, loading, growth }) => (
           <Card key={label}>
@@ -167,6 +193,73 @@ export default function AnalyticsPage() {
           </Card>
         ))}
       </div>
+
+      {/* Top performing post */}
+      {!isLoading && topPost && (
+        <Card>
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium">
+              <Trophy className="h-4 w-4 text-amber-500" />
+              Top Performing Post
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+            <div className="flex gap-4">
+              {topPost.thumbnailUrl && (
+                <img
+                  src={topPost.thumbnailUrl}
+                  alt=""
+                  className="h-16 w-16 flex-shrink-0 rounded-lg object-cover"
+                />
+              )}
+              <div className="min-w-0 flex-1">
+                <div className="mb-2 flex items-center gap-2">
+                  {(topPost.platform || topPost.platforms?.[0]?.platform) && (
+                    <PlatformIcon
+                      platform={(topPost.platform || topPost.platforms?.[0]?.platform) as Platform}
+                      size="sm"
+                      showColor
+                    />
+                  )}
+                  <span className="text-[11px] text-muted-foreground">
+                    {topPost.publishedAt
+                      ? format(new Date(topPost.publishedAt), "MMM d, yyyy")
+                      : "—"}
+                  </span>
+                </div>
+                <p className="mb-3 line-clamp-2 text-sm">
+                  {topPost.content || "—"}
+                </p>
+                <div className="flex flex-wrap gap-4 text-xs">
+                  {[
+                    { label: "Likes", value: topPost.analytics?.likes },
+                    { label: "Comments", value: topPost.analytics?.comments },
+                    { label: "Shares", value: topPost.analytics?.shares },
+                    { label: "Clicks", value: topPost.analytics?.clicks },
+                    { label: "Views", value: topPost.analytics?.views },
+                    { label: "Reach", value: topPost.analytics?.reach },
+                  ]
+                    .filter(({ value }) => value != null && value > 0)
+                    .map(({ label, value }) => (
+                      <div key={label} className="text-center">
+                        <p className="font-semibold">{formatNum(value)}</p>
+                        <p className="text-muted-foreground">{label}</p>
+                      </div>
+                    ))}
+                  {topPost.analytics?.engagementRate != null && (
+                    <div className="text-center">
+                      <p className="font-semibold">
+                        {(topPost.analytics.engagementRate * 100).toFixed(2)}%
+                      </p>
+                      <p className="text-muted-foreground">Eng. Rate</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Connected accounts / follower counts */}
       {accounts.length > 0 && (
@@ -263,6 +356,8 @@ export default function AnalyticsPage() {
                     <th className="px-3 py-2.5 text-right text-xs font-medium text-muted-foreground">Likes</th>
                     <th className="px-3 py-2.5 text-right text-xs font-medium text-muted-foreground">Comments</th>
                     <th className="px-3 py-2.5 text-right text-xs font-medium text-muted-foreground">Shares</th>
+                    <th className="px-3 py-2.5 text-right text-xs font-medium text-muted-foreground">Clicks</th>
+                    <th className="px-3 py-2.5 text-right text-xs font-medium text-muted-foreground">Views</th>
                     <th className="px-3 py-2.5 text-right text-xs font-medium text-muted-foreground">Reach</th>
                     <th className="px-3 py-2.5 text-right text-xs font-medium text-muted-foreground pr-4">Eng. Rate</th>
                   </tr>
@@ -270,8 +365,7 @@ export default function AnalyticsPage() {
                 <tbody>
                   {posts.map((post: any, i: number) => {
                     const a = post.analytics || {};
-                    const platform = post.platform ||
-                      post.platforms?.[0]?.platform;
+                    const platform = post.platform || post.platforms?.[0]?.platform;
                     const date = post.publishedAt
                       ? format(new Date(post.publishedAt), "MMM d, yyyy")
                       : "—";
@@ -308,6 +402,8 @@ export default function AnalyticsPage() {
                         <td className="px-3 py-3 text-right text-xs">{formatNum(a.likes)}</td>
                         <td className="px-3 py-3 text-right text-xs">{formatNum(a.comments)}</td>
                         <td className="px-3 py-3 text-right text-xs">{formatNum(a.shares)}</td>
+                        <td className="px-3 py-3 text-right text-xs">{formatNum(a.clicks)}</td>
+                        <td className="px-3 py-3 text-right text-xs">{formatNum(a.views)}</td>
                         <td className="px-3 py-3 text-right text-xs">{formatNum(a.reach)}</td>
                         <td className="px-3 py-3 text-right text-xs pr-4">
                           {a.engagementRate != null
@@ -336,6 +432,8 @@ function PostsSkeleton() {
           <div className="flex-1 space-y-1.5">
             <div className="h-2.5 w-48 rounded bg-muted" />
           </div>
+          <div className="h-2.5 w-10 rounded bg-muted" />
+          <div className="h-2.5 w-10 rounded bg-muted" />
           <div className="h-2.5 w-10 rounded bg-muted" />
           <div className="h-2.5 w-10 rounded bg-muted" />
           <div className="h-2.5 w-10 rounded bg-muted" />
