@@ -10,10 +10,11 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { Logo, ErrorBoundary } from "@/components/shared";
 import {
-  LayoutDashboard,
   PenSquare,
   Calendar,
-  Users,
+  BarChart2,
+  MessageCircle,
+  MessageSquare,
   ListOrdered,
   Settings,
   Moon,
@@ -21,10 +22,11 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Compose", href: "/dashboard/compose", icon: PenSquare },
   { label: "Calendar", href: "/dashboard/calendar", icon: Calendar },
-  { label: "Accounts", href: "/dashboard/accounts", icon: Users },
+  { label: "Compose", href: "/dashboard/compose", icon: PenSquare },
+  { label: "Analytics", href: "/dashboard/analytics", icon: BarChart2 },
+  { label: "Inbox", href: "/dashboard/inbox", icon: MessageCircle },
+  { label: "Comments", href: "/dashboard/comments", icon: MessageSquare },
   { label: "Queue", href: "/dashboard/queue", icon: ListOrdered },
 ];
 

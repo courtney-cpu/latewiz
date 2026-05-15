@@ -12,14 +12,14 @@ function PortalEntry() {
   const { setDefaultProfileId } = useAppStore();
 
   useEffect(() => {
-    const profileId = searchParams.get("profileId");
+    const profileId = searchParams.get("profile");
     if (profileId) {
       setDefaultProfileId(profileId);
       router.push("/dashboard");
     }
   }, [searchParams, setDefaultProfileId, router]);
 
-  const hasProfileId = !!searchParams.get("profileId");
+  const hasProfileId = !!searchParams.get("profile");
 
   if (hasProfileId) {
     return (

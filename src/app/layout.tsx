@@ -15,8 +15,10 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
+const appName = process.env.NEXT_PUBLIC_APP_NAME ?? "JAA Portal";
+
 export const metadata: Metadata = {
-  title: "Just An Agent — Client Portal",
+  title: appName,
   description: "Your social media scheduling portal, powered by Just An Agent.",
   icons: {
     icon: [
