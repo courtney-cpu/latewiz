@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useAnalytics } from "@/hooks/use-analytics";
+import { useAnalytics, useFollowerStats } from "@/hooks/use-analytics";
 import { useAccounts } from "@/hooks";
 import { PlatformIcon } from "@/components/shared/platform-icon";
 import { PLATFORM_NAMES, type Platform } from "@/lib/late-api";
@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { BarChart2, TrendingUp, Heart, MessageCircle, Share2, Eye } from "lucide-react";
+import { BarChart2, TrendingUp, Heart, MessageCircle, Share2, Eye, Users } from "lucide-react";
 import { format, subDays } from "date-fns";
 
 type DateRange = "7d" | "30d" | "90d";
@@ -52,6 +52,27 @@ export default function AnalyticsPage() {
 
   const { data: accountsData } = useAccounts();
   const accounts = accountsData?.accounts || [];
+
+  const accountIds = accounts.map((a: any) => a._id).join(",");
+  const { data: followerData, isLoading: followerLoading } = useFollowerStats(
+    accountIds || undefined,
+    fromDate,
+    toDate
+  );
+  const followerAccounts: any[] = (followerData as any)?.accounts || [];
+  const followerMap = useMemo(() => {
+    const m: Record<string, { currentFollowers?: number; growth?: number }> = {};
+    followerAccounts.forEach((a) => { m[a._id] = a; });
+    return m;
+  }, [followerAccounts]);
+  const totalFollowers = useMemo(
+    () => followerAccounts.reduce((sum, a) => sum + (a.currentFollowers || 0), 0),
+    [followerAccounts]
+  );
+  const totalGrowth = useMemo(
+    () => followerAccounts.reduce((sum, a) => sum + (a.growth || 0), 0),
+    [followerAccounts]
+  );
 
   const posts = useMemo(() => {
     const list = (data as any)?.posts || [];
@@ -113,14 +134,15 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {[
-          { label: "Likes", value: summary.likes, icon: Heart },
-          { label: "Comments", value: summary.comments, icon: MessageCircle },
-          { label: "Shares", value: summary.shares, icon: Share2 },
-          { label: "Impressions", value: summary.impressions, icon: Eye },
-          { label: "Reach", value: summary.reach, icon: TrendingUp },
-        ].map(({ label, value, icon: Icon }) => (
+          { label: "Likes", value: summary.likes, icon: Heart, loading: isLoading, growth: null },
+          { label: "Comments", value: summary.comments, icon: MessageCircle, loading: isLoading, growth: null },
+          { label: "Shares", value: summary.shares, icon: Share2, loading: isLoading, growth: null },
+          { label: "Impressions", value: summary.impressions, icon: Eye, loading: isLoading, growth: null },
+          { label: "Reach", value: summary.reach, icon: TrendingUp, loading: isLoading, growth: null },
+          { label: "Followers", value: totalFollowers, icon: Users, loading: followerLoading, growth: totalGrowth },
+        ].map(({ label, value, icon: Icon, loading, growth }) => (
           <Card key={label}>
             <CardHeader className="p-3 pb-1">
               <CardTitle className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
@@ -129,10 +151,17 @@ export default function AnalyticsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-3 pt-0">
-              {isLoading ? (
+              {loading ? (
                 <div className="h-7 w-16 animate-pulse rounded bg-muted" />
               ) : (
-                <span className="text-2xl font-bold">{formatNum(value)}</span>
+                <>
+                  <span className="text-2xl font-bold">{formatNum(value)}</span>
+                  {growth !== null && growth !== 0 && (
+                    <p className={`text-[10px] mt-0.5 ${growth > 0 ? "text-emerald-600" : "text-red-500"}`}>
+                      {growth > 0 ? "+" : ""}{formatNum(growth)} this period
+                    </p>
+                  )}
+                </>
               )}
             </CardContent>
           </Card>
@@ -147,17 +176,30 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent className="p-4 pt-0">
             <div className="flex flex-wrap gap-3">
-              {accounts.map((acc: any) => (
-                <div key={acc._id} className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2">
-                  <PlatformIcon platform={acc.platform as Platform} size="sm" showColor />
-                  <div>
-                    <p className="text-xs font-medium">{acc.displayName || acc.username}</p>
-                    <p className="text-[10px] text-muted-foreground">
-                      {PLATFORM_NAMES[acc.platform as Platform]}
-                    </p>
+              {accounts.map((acc: any) => {
+                const fs = followerMap[acc._id];
+                return (
+                  <div key={acc._id} className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2">
+                    <PlatformIcon platform={acc.platform as Platform} size="sm" showColor />
+                    <div>
+                      <p className="text-xs font-medium">{acc.displayName || acc.username}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {PLATFORM_NAMES[acc.platform as Platform]}
+                      </p>
+                      {fs?.currentFollowers != null && (
+                        <p className="text-[10px] font-medium">
+                          {formatNum(fs.currentFollowers)} followers
+                          {fs.growth != null && fs.growth !== 0 && (
+                            <span className={fs.growth > 0 ? " text-emerald-600" : " text-red-500"}>
+                              {" "}{fs.growth > 0 ? "+" : ""}{formatNum(fs.growth)}
+                            </span>
+                          )}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>
